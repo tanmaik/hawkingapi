@@ -27,7 +27,7 @@ module.exports = mongoose.model("Summary", summarySchema);
 //       { questionText: "Question 2", answerText: "Answer 2" },
 //     ],
 //   });
-  
+
 //   newSummary.save((err, summary) => {
 //     if (err) {
 //       console.error(err);

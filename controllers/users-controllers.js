@@ -19,7 +19,7 @@ const signup = async (req, res, next) => {
   if (!errors.isEmpty()) {
     return next(new HttpError("Invalid inputs passed, check your data.", 422));
   }
-  const { name, email, password } = req.body;
+  const { first, last, email, password } = req.body;
 
   let existingUser;
   try {
@@ -42,15 +42,16 @@ const signup = async (req, res, next) => {
 
   const hashedPassword = await bcrypt.hash(password, 10);
   const createdUser = new User({
-    name,
+    first,
+    last,
     email,
+    hashedPassword,
     avatar:
       "https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg",
-    hashedPassword: hashedPassword,
-    institution: "none",
-    tier: "free",
-    friends: [],
+    summaries: [],
+    goals: [],
   });
+
   try {
     await createdUser.save();
   } catch (err) {
@@ -131,10 +132,77 @@ const changePicture = async (req, res, next) => {
   res.json({ user: user.toObject({ getters: true }) });
 };
 
+const changeGoals = async (req, res, next) => {
+  const { goals } = req.body;
+  const userId = req.params.uid;
+  let user;
+  try {
+    user = await User.findById(userId);
+  } catch (err) {
+    const error = new HttpError(
+      "Something went wrong, could not change goals.",
+      500
+    );
+    return next(error);
+  }
+  if (!user) {
+    const error = new HttpError(
+      "Could not find specified user, could not change goals.",
+      500
+    );
+    return next(error);
+  }
+
+  user.goals = goals;
+  try {
+    await user.save();
+  } catch (err) {
+    const error = new HttpError(
+      "Something went wrong, could not change goals.",
+      500
+    );
+    return next(error);
+  }
+  res.json({ user: user.toObject({ getters: true }) });
+};
+
+const addSummary = async (req, res, next) => {
+  const { summary } = req.body;
+  const userId = req.params.uid;
+  let user;
+  try {
+    user = await User.findById(userId);
+  } catch (err) {
+    const error = new HttpError(
+      "Something went wrong, could not add summary.",
+      500
+    );
+    return next(error);
+  }
+  if (!user) {
+    const error = new HttpError(
+      "Could not find specified user, could not add summary.",
+      500
+    );
+    return next(error);
+  }
+
+  user.summaries.push(summary);
+  try {
+    await user.save();
+  } catch (err) {
+    const error = new HttpError(
+      "Something went wrong, could not add summary.",
+      500
+    );
+    return next(error);
+  }
+  res.json({ user: user.toObject({ getters: true }) });
+};
+
+exports.changeGoals = changeGoals;
+exports.addSummary = addSummary;
 exports.changePicture = changePicture;
-exports.addFriend = addFriend;
-exports.removeFriend = removeFriend;
-exports.changeTier = changeTier;
 exports.getUsers = getUsers;
 exports.signup = signup;
 exports.login = login;
