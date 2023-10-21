@@ -19,7 +19,7 @@ const signup = async (req, res, next) => {
   if (!errors.isEmpty()) {
     return next(new HttpError("Invalid inputs passed, check your data.", 422));
   }
-  const { first, last, email, password } = req.body;
+  const { email, password } = req.body;
 
   let existingUser;
   try {
@@ -42,8 +42,8 @@ const signup = async (req, res, next) => {
 
   const hashedPassword = await bcrypt.hash(password, 10);
   const createdUser = new User({
-    first,
-    last,
+    first: "",
+    last: "",
     email,
     hashedPassword,
     avatar:
@@ -200,6 +200,66 @@ const addSummary = async (req, res, next) => {
   res.json({ user: user.toObject({ getters: true }) });
 };
 
+const addName = async (req, res, next) => {
+  const { first, last } = req.body;
+  const userId = req.params.uid;
+  let user;
+  try {
+    user = await User.findById(userId);
+  } catch (err) {
+    const error = new HttpError(
+      "Something went wrong, could not update name.",
+      500
+    );
+    return next(error);
+  }
+  if (!user) {
+    const error = new HttpError(
+      "Could not find specified user, could not update name.",
+      500
+    );
+    return next(error);
+  }
+
+  user.first = first;
+  user.last = last;
+  try {
+    await user.save();
+  } catch (err) {
+    const error = new HttpError(
+      "Something went wrong, could not update name.",
+      500
+    );
+    return next(error);
+  }
+
+  res.json({ user: user.toObject({ getters: true }) });
+};
+
+const getSummaries = async (req, res, next) => {
+    const userId = req.params.uid;
+    let user;
+    try {
+        user = await User.findById(userId);
+    } catch (err) {
+        const error = new HttpError(
+        "Something went wrong, could not get summaries.",
+        500
+        );
+        return next(error);
+    }
+    if (!user) {
+        const error = new HttpError(
+        "Could not find specified user, could not get summaries.",
+        500
+        );
+        return next(error);
+    }
+    
+    res.json({ summaries: user.summaries });
+};
+
+exports.addName = addName;
 exports.changeGoals = changeGoals;
 exports.addSummary = addSummary;
 exports.changePicture = changePicture;
