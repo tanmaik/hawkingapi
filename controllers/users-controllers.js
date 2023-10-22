@@ -14,6 +14,18 @@ const getUsers = async (req, res, next) => {
   res.json({ users: users.map((user) => user.toObject({ getters: true })) });
 };
 
+const getUser = async (req, res, next) => {
+  const userId = req.params.uid;
+  let user;
+  try {
+    user = await User.findById(userId, "-password");
+  } catch (err) {
+    const error = new HttpError("Fetching user failed.", 500);
+    return next(error);
+  }
+  res.json({ user: user.toObject({ getters: true }) });
+};
+
 const signup = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -142,10 +154,12 @@ const changeAvatar = async (req, res, next) => {
 const changeGoals = async (req, res, next) => {
   const { goals } = req.body;
   const userId = req.params.uid;
+  //   console.log(userId);
   let user;
   try {
     user = await User.findById(userId);
   } catch (err) {
+    console.log("error other");
     const error = new HttpError(
       "Something went wrong, could not change goals.",
       500
@@ -153,6 +167,7 @@ const changeGoals = async (req, res, next) => {
     return next(error);
   }
   if (!user) {
+    console.log("user not found");
     const error = new HttpError(
       "Could not find specified user, could not change goals.",
       500
@@ -161,9 +176,11 @@ const changeGoals = async (req, res, next) => {
   }
 
   user.goals = goals;
+  console.log(goals);
   try {
     await user.save();
   } catch (err) {
+    console.log("couldn't save goals");
     const error = new HttpError(
       "Something went wrong, could not change goals.",
       500
@@ -274,3 +291,4 @@ exports.changeAvatar = changeAvatar;
 exports.getUsers = getUsers;
 exports.signup = signup;
 exports.login = login;
+exports.getUser = getUser;

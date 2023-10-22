@@ -6,6 +6,7 @@ const usersController = require("../controllers/users-controllers");
 const router = express.Router();
 
 router.get("/", usersController.getUsers);
+router.get("/getUser/:uid", usersController.getUser);
 
 router.post(
   "/signup",
@@ -18,12 +19,11 @@ router.post(
 
 router.post("/login", usersController.login);
 
-router.post("/addName", usersController.addName);
-router.patch("/changeGoals", usersController.changeGoals);
-router.patch("/changeAvatar", usersController.changeAvatar);
-router.post("/addSummary", usersController.addSummary);
+router.post("/addName/:uid", usersController.addName);
+router.patch("/changeGoals/:uid", usersController.changeGoals);
+router.patch("/changeAvatar/:uid", usersController.changeAvatar);
+router.post("/addSummary/:uid", usersController.addSummary);
 
-
-router.get("/getSummaries", usersController.getSummaries);
+router.get("/getSummaries/:uid", usersController.getSummaries);
 
 module.exports = router;

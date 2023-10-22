@@ -14,7 +14,6 @@ const summarySchema = new Schema({
   easySummary: { type: String, required: true },
   flashcards: [questionSchema],
   questions: [questionSchema],
-  pneumonic: [questionSchema],
 });
 
 module.exports = mongoose.model("Summary", summarySchema);
