@@ -18,4 +18,12 @@ router.post(
 
 router.post("/login", usersController.login);
 
+router.post("/addName", usersController.addName);
+router.patch("/changeGoals", usersController.changeGoals);
+router.patch("/changeAvatar", usersController.changeAvatar);
+router.post("/addSummary", usersController.addSummary);
+
+
+router.get("/getSummaries", usersController.getSummaries);
+
 module.exports = router;

@@ -25,6 +25,7 @@ const signup = async (req, res, next) => {
   try {
     existingUser = await User.findOne({ email: email });
   } catch (err) {
+    console.log(err);
     const error = new HttpError(
       "Signing up failed, please try again later.",
       500
@@ -42,8 +43,8 @@ const signup = async (req, res, next) => {
 
   const hashedPassword = await bcrypt.hash(password, 10);
   const createdUser = new User({
-    first: "",
-    last: "",
+    first: " ",
+    last: " ",
     email,
     hashedPassword,
     avatar:
@@ -55,6 +56,7 @@ const signup = async (req, res, next) => {
   try {
     await createdUser.save();
   } catch (err) {
+    console.log(err);
     const error = new HttpError(
       "Signing up failed, please try again later.",
       500
@@ -67,6 +69,7 @@ const signup = async (req, res, next) => {
 
 const login = async (req, res, next) => {
   const { email, password } = req.body;
+
   let existingUser;
 
   try {
@@ -83,7 +86,11 @@ const login = async (req, res, next) => {
     );
     return next(error);
   }
-  const correctPassword = await bcrypt.compare(password, existingUser.password);
+
+  const correctPassword = await bcrypt.compare(
+    password,
+    existingUser.hashedPassword
+  );
   if (!correctPassword) {
     const error = new HttpError(
       "Invalid credentials, could not log you in.",
@@ -98,7 +105,7 @@ const login = async (req, res, next) => {
   });
 };
 
-const changePicture = async (req, res, next) => {
+const changeAvatar = async (req, res, next) => {
   const { pictureUrl } = req.body;
   const userId = req.params.uid;
   let user;
@@ -119,7 +126,7 @@ const changePicture = async (req, res, next) => {
     return next(error);
   }
 
-  user.image = pictureUrl;
+  user.avatar = pictureUrl;
   try {
     await user.save();
   } catch (err) {
@@ -237,32 +244,33 @@ const addName = async (req, res, next) => {
 };
 
 const getSummaries = async (req, res, next) => {
-    const userId = req.params.uid;
-    let user;
-    try {
-        user = await User.findById(userId);
-    } catch (err) {
-        const error = new HttpError(
-        "Something went wrong, could not get summaries.",
-        500
-        );
-        return next(error);
-    }
-    if (!user) {
-        const error = new HttpError(
-        "Could not find specified user, could not get summaries.",
-        500
-        );
-        return next(error);
-    }
-    
-    res.json({ summaries: user.summaries });
+  const userId = req.params.uid;
+  let user;
+  try {
+    user = await User.findById(userId);
+  } catch (err) {
+    const error = new HttpError(
+      "Something went wrong, could not get summaries.",
+      500
+    );
+    return next(error);
+  }
+  if (!user) {
+    const error = new HttpError(
+      "Could not find specified user, could not get summaries.",
+      500
+    );
+    return next(error);
+  }
+
+  res.json({ summaries: user.summaries });
 };
 
+exports.getSummaries = getSummaries;
 exports.addName = addName;
 exports.changeGoals = changeGoals;
 exports.addSummary = addSummary;
-exports.changePicture = changePicture;
+exports.changeAvatar = changeAvatar;
 exports.getUsers = getUsers;
 exports.signup = signup;
 exports.login = login;
