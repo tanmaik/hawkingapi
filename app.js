@@ -42,9 +42,9 @@ app.use((error, req, res, next) => {
 mongoose
   .connect(process.env.MONGODB_URI)
   .then(() => {
-    app.listen(process.env.SERVER_PORT, () => {
+    app.listen(process.env.PORT, () => {
       console.log(
-        `Server is connected and running on port ${process.env.SERVER_PORT}`
+        `Server is connected and running on port ${process.env.PORT}`
       );
     });
   })
