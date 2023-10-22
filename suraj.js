@@ -1,28 +1,12 @@
-const express = require("express");
-const summariesController = require("../controllers/summaries-controllers");
 const OpenAI = require("openai");
 
-const router = express.Router();
-const fs = require("fs");
+require("dotenv").config();
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-router.get("/:sid", summariesController.getSummary);
-router.post("/:uid", summariesController.addSummary);
-const multer = require("multer");
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "uploads/");
-  },
-  filename: function (req, file, cb) {
-    cb(null, file.originalname);
-  },
-});
-const upload = multer({ storage: storage });
-
-const tesseract = require("node-tesseract-ocr");
+const fs = require("fs");
 
 // in hawkin's words...
 const getSummary = async (text, summary_size) => {
@@ -152,76 +136,18 @@ const getAllGeneration = async (text, summary_size) => {
   // console.log("Here are their definitions...",flashcards[1]);
   // console.log("\n");
 
-  title = await getImagePrompt(text);
+  image_prompt = await getImagePrompt(text);
   // console.log("Here is one word to describe the article...",image_prompt);
 
-  image_url = await getImage(title);
-
-  return {
-    summary,
-    simple_summary,
-    qna,
-    flashcards,
-    title,
-    image_url,
-  };
+  image_url = await getImage(image_prompt);
   // console.log("Use this url to find an icon that describes the article...",image_url)
 };
 
-router.patch("/upload", upload.single("file"), async function (req, res, next) {
-  // req.file is the `file` file
-  // req.body will hold the text fields, if there were any
-  console.log(req.file); // you will see all file details in console
-  let text = "";
-  let summary_size = 1;
-  if (
-    req.file.originalname.split(".")[
-      req.file.originalname.split(".").length - 1
-    ] === "txt"
-  ) {
-    console.log("file is txt");
-    let data = fs.readFileSync(req.file.path, "utf8");
-    text = data.replace("\n", "");
-  } else if (
-    req.file.originalname.split(".")[
-      req.file.originalname.split(".").length - 1
-    ] === "png" ||
-    req.file.originalname.split(".")[
-      req.file.originalname.split(".").length - 1
-    ] === "jpg" ||
-    req.file.originalname.split(".")[
-      req.file.originalname.split(".").length - 1
-    ] === "jpeg"
-  ) {
-    const config = {
-      lang: "eng",
-      oem: 1,
-      psm: 3,
-    };
-
-    var image_file_name = req.file.path;
-
-    try {
-      text = await tesseract.recognize(image_file_name, config);
-      console.log(text);
-    } catch (error) {
-      console.log(error.message);
-    }
-  } else {
-    console.log("file is not supported");
-  }
-
-  summary_size = parseInt(text.length / 250);
-  console.log(text);
-  const generations = await getAllGeneration(text, summary_size);
-  console.log({
-    summary: summary,
-    easySummary: simple_summary,
-    questions: qna,
-    flashcards: flashcards,
-    title: title,
-    icon: image_url,
-  });
+fs.readFile("data.txt", "utf8", function (err, data) {
+  text = data.replace("\n", "");
+  // Display the file content
+  n = 250;
+  summary_size = parseInt(text.length / n);
+  console.log(text, n);
+  getAllGeneration(text, summary_size);
 });
-
-module.exports = router;
