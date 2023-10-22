@@ -1,6 +1,9 @@
 const express = require("express");
 const summariesController = require("../controllers/summaries-controllers");
 const OpenAI = require("openai");
+const Summary = require("../models/summary");
+const HttpError = require("../models/http-error");
+const User = require("../models/user");
 
 const router = express.Router();
 const fs = require("fs");
@@ -168,60 +171,130 @@ const getAllGeneration = async (text, summary_size) => {
   // console.log("Use this url to find an icon that describes the article...",image_url)
 };
 
-router.patch("/upload", upload.single("file"), async function (req, res, next) {
-  // req.file is the `file` file
-  // req.body will hold the text fields, if there were any
-  console.log(req.file); // you will see all file details in console
-  let text = "";
-  let summary_size = 1;
-  if (
-    req.file.originalname.split(".")[
-      req.file.originalname.split(".").length - 1
-    ] === "txt"
-  ) {
-    console.log("file is txt");
-    let data = fs.readFileSync(req.file.path, "utf8");
-    text = data.replace("\n", "");
-  } else if (
-    req.file.originalname.split(".")[
-      req.file.originalname.split(".").length - 1
-    ] === "png" ||
-    req.file.originalname.split(".")[
-      req.file.originalname.split(".").length - 1
-    ] === "jpg" ||
-    req.file.originalname.split(".")[
-      req.file.originalname.split(".").length - 1
-    ] === "jpeg"
-  ) {
-    const config = {
-      lang: "eng",
-      oem: 1,
-      psm: 3,
-    };
+router.patch(
+  "/upload/:uid",
+  upload.single("file"),
+  async function (req, res, next) {
+    let userId = req.params.uid;
+    // req.file is the `file` file
+    // req.body will hold the text fields, if there were any
+    console.log(req.file); // you will see all file details in console
+    let text = "";
+    let summary_size = 1;
+    if (
+      req.file.originalname.split(".")[
+        req.file.originalname.split(".").length - 1
+      ] === "txt"
+    ) {
+      console.log("file is txt");
+      let data = fs.readFileSync(req.file.path, "utf8");
+      text = data.replace("\n", "");
+    } else if (
+      req.file.originalname.split(".")[
+        req.file.originalname.split(".").length - 1
+      ] === "png" ||
+      req.file.originalname.split(".")[
+        req.file.originalname.split(".").length - 1
+      ] === "jpg" ||
+      req.file.originalname.split(".")[
+        req.file.originalname.split(".").length - 1
+      ] === "jpeg"
+    ) {
+      const config = {
+        lang: "eng",
+        oem: 1,
+        psm: 3,
+      };
 
-    var image_file_name = req.file.path;
+      var image_file_name = req.file.path;
+
+      try {
+        text = await tesseract.recognize(image_file_name, config);
+        console.log(text);
+      } catch (error) {
+        console.log(error.message);
+      }
+    } else {
+      console.log("file is not supported");
+    }
+
+    summary_size = parseInt(text.length / 250);
+    console.log(text);
+    const generations = await getAllGeneration(text, summary_size);
+
+    let questions = generations.qna;
+    let finalQuestions = [];
+    let flashcards = generations.flashcards;
+
+    for (var i = 0; i < questions[0].length; i++) {
+      finalQuestions.push({
+        questionText: questions[0][i],
+        answerText: questions[1][i],
+      });
+    }
+
+    let finalFlashcards = [];
+    for (var i = 0; i < flashcards[0].length; i++) {
+      finalFlashcards.push({
+        questionText: flashcards[1][i],
+        answerText: flashcards[0][i],
+      });
+    }
+
+    const newSummary = new Summary({
+      summary: generations.summary,
+      easySummary: generations.simple_summary,
+      questions: finalQuestions,
+      flashcards: finalFlashcards,
+      title: generations.title,
+      icon: generations.image_url,
+    });
 
     try {
-      text = await tesseract.recognize(image_file_name, config);
-      console.log(text);
-    } catch (error) {
-      console.log(error.message);
+      await newSummary.save();
+    } catch (err) {
+      console.log(err);
+      const error = new HttpError(
+        "Creating summary failed, please try again later.",
+        500
+      );
+      return next(error);
     }
-  } else {
-    console.log("file is not supported");
-  }
 
-  summary_size = parseInt(text.length / 250);
-  console.log(text);
-  const generations = await getAllGeneration(text, summary_size);
-  console.log({
-    summary: summary,
-    easySummary: simple_summary,
-    questions: qna,
-    flashcards: flashcards,
-    title: title,
-    icon: image_url,
-  });
-});
+    let user;
+    try {
+      user = await User.findById(userId);
+    } catch (err) {
+      const error = new HttpError(
+        "Something went wrong, could not add summary.",
+        500
+      );
+      console.log(err);
+      return next(error);
+    }
+
+    if (!user) {
+      const error = new HttpError(
+        "Could not find specified user, could not add summary.",
+        500
+      );
+      return next(error);
+    }
+    //add new summary's id to user's summaries
+    user.summaries.push(newSummary.id);
+
+    try {
+      await user.save();
+    } catch (err) {
+      const error = new HttpError(
+        "Something went wrong, could not add summary.",
+        500
+      );
+      return next(error);
+    }
+
+    res.status(201).json({ summary: newSummary.toObject({ getters: true }) });
+  }
+);
 
 module.exports = router;
