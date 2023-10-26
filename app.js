@@ -12,6 +12,7 @@ const app = express();
 
 app.use(function (req, res, next) {
   var authToken = req.get("ACCESS_TOKEN");
+  console.log("Hi" + authToken);
   if (authToken === process.env.ACCESS_TOKEN) {
     next();
   }
