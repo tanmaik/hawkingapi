@@ -10,6 +10,14 @@ const summaryRoutes = require("./routes/summary-routes");
 
 const app = express();
 
+app.use(function (req, res, next) {
+  var authToken = req.headers("AccessToken");
+  if (authToken === process.env.ACCESS_TOKEN) {
+    next();
+  }
+  res.status(401).send("Unauthorized Request");
+});
+
 app.use(bodyParser.json());
 
 app.use((req, res, next) => {
