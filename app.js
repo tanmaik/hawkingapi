@@ -11,6 +11,8 @@ const summaryRoutes = require("./routes/summary-routes");
 const app = express();
 
 app.use(function (req, res, next) {
+  console.log(JSON.stringify(req.headers));
+
   var authToken = req.get("ACCESS_TOKEN");
   console.log("Hi" + authToken);
   if (authToken === process.env.ACCESS_TOKEN) {
