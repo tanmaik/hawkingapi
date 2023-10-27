@@ -16,16 +16,15 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-
 app.use(function (req, res, next) {
   console.log(JSON.stringify(req.headers));
 
   var authToken = req.get("ACCESS_TOKEN");
-  console.log("Hi" + authToken);
   if (authToken === process.env.ACCESS_TOKEN) {
     next();
+  } else {
+    res.status(401).send("Unauthorized Request");
   }
-  res.status(401).send("Unauthorized Request");
 });
 
 app.use(bodyParser.json());
