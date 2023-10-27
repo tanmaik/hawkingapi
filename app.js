@@ -10,6 +10,12 @@ const summaryRoutes = require("./routes/summary-routes");
 
 const app = express();
 
+const corsOptions = {
+  exposedHeaders: ["ACCESS_TOKEN"],
+};
+
+app.use(cors(corsOptions));
+
 app.use(function (req, res, next) {
   console.log(JSON.stringify(req.headers));
 
