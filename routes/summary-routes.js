@@ -25,7 +25,6 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-
 // in hawkin's words...
 const getSummary = async (text, summary_size) => {
   const prompt = `Concise ${summary_size}-sentence summary of the following: ${text}`;
@@ -183,7 +182,10 @@ const extractTextFromImage = async (imagePath) => {
             type: "text",
             text: "Please extract and return all the text you can see in this image.",
           },
-          { type: "image_url", image_url: `data:image/jpeg;base64,${image}` },
+          {
+            type: "image_url",
+            image_url: { url: `data:image/jpeg;base64,${image}` },
+          },
         ],
       },
     ],
