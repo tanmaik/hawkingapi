@@ -25,7 +25,6 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-const tesseract = require("node-tesseract-ocr");
 
 // in hawkin's words...
 const getSummary = async (text, summary_size) => {
@@ -171,6 +170,28 @@ const getAllGeneration = async (text, summary_size) => {
   // console.log("Use this url to find an icon that describes the article...",image_url)
 };
 
+const extractTextFromImage = async (imagePath) => {
+  const image = fs.readFileSync(imagePath, { encoding: "base64" });
+
+  const response = await openai.chat.completions.create({
+    model: "gpt-4o",
+    messages: [
+      {
+        role: "user",
+        content: [
+          {
+            type: "text",
+            text: "Please extract and return all the text you can see in this image.",
+          },
+          { type: "image_url", image_url: `data:image/jpeg;base64,${image}` },
+        ],
+      },
+    ],
+  });
+
+  return response.choices[0].message.content;
+};
+
 router.patch(
   "/upload/:uid",
   upload.single("file"),
@@ -209,7 +230,7 @@ router.patch(
       var image_file_name = req.file.path;
 
       try {
-        text = await tesseract.recognize(image_file_name, config);
+        text = await extractTextFromImage(req.file.path);
         console.log(text);
       } catch (error) {
         console.log(error.message);
