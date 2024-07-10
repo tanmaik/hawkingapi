@@ -13,6 +13,7 @@ const app = express();
 
 const corsOptions = {
   exposedHeaders: ["ACCESS_TOKEN"],
+  origin: true,
 };
 
 app.use(cors(corsOptions));
