@@ -154,12 +154,13 @@ const changeAvatar = async (req, res, next) => {
 const changeGoals = async (req, res, next) => {
   const { goals } = req.body;
   const userId = req.params.uid;
-  //   console.log(userId);
+  console.log(userId + " is the user id");
   let user;
   try {
     user = await User.findById(userId);
   } catch (err) {
     console.log("error other");
+    console.log(err);
     const error = new HttpError(
       "Something went wrong, could not change goals.",
       500
